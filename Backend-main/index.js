@@ -7,11 +7,22 @@ const fs = require("fs");
 const { MongoClient, ServerApiVersion } = require('mongodb');
 const { kMaxLength } = require("buffer");
 const mongoose = require("mongoose");
+const cors = require("cors");
+const Image = require('./Image');
 
-const imageSchema = require('./models/Image'); 
+
+const imageSchema = require('./Image'); 
 
 const app = express();
-app.use(bodyParser.urlencoded({ extended: true }));
+app.use(cors(
+    {
+        origin: '*', // Change this to the specific origin you want to allow
+        methods: ['GET', 'POST'],
+        allowedHeaders: ['Content-Type', 'Authorization'],
+    }
+));
+app.use(bodyParser.json());
+app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
 const storage = multer.diskStorage({
@@ -45,29 +56,22 @@ const connectDB = async () => {
 connectDB();
 
 
-app.post("/api/upload", upload.single("image"), (req, res) => {
+app.post("/api/upload", upload.single("image"), async (req, res) => {
+    // res.setHeader("Content-Type", "multipart/form-data");
+    // res.setHeader("Accept", "multipart/form-data")
+    // res.setHeader("Access-Control-Allow-Origin", "*")
     try {
-        console.log(req.file.path)
-        var img = fs.readFileSync(req.file.path);
-        var encode_img = img.toString('base64');
-        var final_img = {
-            contentType: req.file.mimetype,
-            image: Buffer.from(encode_img,'base64')
-        };
+        const metadata = req.body; // Assuming metadata is sent as JSON in the request body
 
-        console.log(final_img)
-        console.log(req.body)
-        const metadata = JSON.parse(JSON.stringify(req.body)); // Assuming metadata is sent as JSON in the request body
-
-        const newImage = new imageSchema({
-            contentType: final_img.contentType,
-            data: final_img.image,
-            title: metadata.title,
-            Favourite: metadata.Favorite
+        const newImage = new Image({
+            data: req.body.path.toString(),
+            title: 'new sjnkjn',
+            Favourite: false,
+            contentType: 'png'
         });
         console.log(newImage)
 
-        newImage.save()
+        await newImage.save()
             .then((item,err)=> {
                 if(err) {
                     console.log(err)
@@ -78,6 +82,19 @@ app.post("/api/upload", upload.single("image"), (req, res) => {
         
                 }
             })
+
+        // const { originalname, buffer, mimetype } = req.file;
+    
+        // const image = new Image({
+        // name: originalname,
+        // data: buffer,
+        // title: originalname,
+        // contentType: mimetype,
+        // });
+
+        // await image.save();
+
+        res.status(201).send('Image uploaded successfully');
         } 
     catch (error) {
         console.error(error);
@@ -86,19 +103,21 @@ app.post("/api/upload", upload.single("image"), (req, res) => {
 });
 
 
-app.get("/api/images", (req, res) => {
-    imageSchema.find({})
-    .then((err, images) => {
-        if (err) {
-            console.log(err);
-            res.status(500).send("An error occurred", err);
-        } else {
-            res.send({ images: images });
-        }
-    });
+app.get("/api/images", async(req, res) => {
+    const images = await Image.find();
+    // Image.deleteMany({});
+    console.log(images);
+    res.json(images)
+    // cb.find({})
+    // .then((err, images) => {
+    //     if (err) {
+    //         console.log(err);
+    //         res.status(500).send("An error occurred", err);
+    //     } else {
+    //         res.send({ images: images });
+    //     }
+    // });
 });
-
-
 
 app.listen(5000, () => {
   console.log("Server is listening on Port 5000");
