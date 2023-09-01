@@ -1,3 +1,7 @@
+Since, you have seen this git repository, I please want you to check the 'Aug-X new' since the commits on this folder were not complete.
+
+
+
 # Getting Started with Create React App
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
